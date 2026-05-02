@@ -1,9 +1,19 @@
--- LK7 HUB - EXECUTOR VERSION
+-- LK7 HUB - EXECUTOR VERSION (COM ARRASTE ATIVADO)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("LK7 HUB - IMPÉRIO GG", "DarkTheme")
 
+-- ATIVA O ARRASTE DO PAINEL NA TELA
+-- Isso resolve o problema de não conseguir mexer o menu
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, dragStart, startPos
+
+local function update(input)
+    local delta = input.Position - dragStart
+    game:GetService("TweenService"):Create(game.CoreGui:FindFirstChild("LK7 HUB - IMPÉRIO GG").Main, TweenInfo.new(0.1), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
+end
+
 -- Variáveis de Configuração (Baseadas na dica do seu amigo)
-local targetHeight = 91 -- O "fixo em 91" de image_868a1b.png
+local targetHeight = 91 -- O "fixo em 91"
 local flashRemote = nil
 
 -- Função para localizar o Remote de Flash automaticamente (Auto Grab/Trigger)
@@ -20,16 +30,15 @@ end
 local Tab = Window:NewTab("Main")
 local Section = Tab:NewSection("Movimentação & Visual")
 
--- BOTÃO FLASH TP (Usando a lógica de coordenadas e fire remote)
-Section:NewButton("Flash TP (Coord 91)", "Teleporte instantâneo usando a dica do amigo", function()
+-- BOTÃO FLASH TP (Instruções da imagem image_867a65.png)
+Section:NewButton("Flash TP (Coord 91)", "Teleporte instantâneo", function()
     local character = game.Players.LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
-        -- Tenta dar fire no remote se encontrar um, senão usa CFrame local
         local remote = findFlashRemote()
         local targetPos = Vector3.new(character.HumanoidRootPart.Position.X, targetHeight, character.HumanoidRootPart.Position.Z)
         
         if remote then
-            remote:FireServer(targetPos) -- "Remote pra dar fire no flash"
+            remote:FireServer(targetPos) -- "Remote pra dar fire"
         else
             character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
         end
@@ -50,4 +59,4 @@ Section:NewToggle("Base Ray X", "Enxergar através das paredes", function(state)
 end)
 
 -- NOTIFICAÇÃO DE INICIALIZAÇÃO
-Library:Notify("LK7 HUB", "Script carregado com sucesso!", 5)
+Library:Notify("LK7 HUB", "Script carregado! Agora você pode arrastar o painel.", 5)
