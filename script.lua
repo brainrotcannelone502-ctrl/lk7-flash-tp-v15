@@ -1,44 +1,69 @@
--- LK7 HUB - EXECUTOR VERSION (COM ARRASTE ATIVADO)
+-- LK7 HUB - VERSÃO CORRIGIDA (ARRASTE FORÇADO)
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
 local Window = Library.CreateLib("LK7 HUB - IMPÉRIO GG", "DarkTheme")
 
--- ATIVA O ARRASTE DO PAINEL NA TELA
--- Isso resolve o problema de não conseguir mexer o menu
-local UserInputService = game:GetService("UserInputService")
-local dragging, dragInput, dragStart, startPos
+-- LÓGICA DE ARRASTE MANUAL (PARA NÃO TRAVAR MAIS)
+local function MakeDraggable(gui)
+    local UserInputService = game:GetService("UserInputService")
+    local dragging, dragInput, dragStart, startPos
 
-local function update(input)
-    local delta = input.Position - dragStart
-    game:GetService("TweenService"):Create(game.CoreGui:FindFirstChild("LK7 HUB - IMPÉRIO GG").Main, TweenInfo.new(0.1), {Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)}):Play()
-end
-
--- Variáveis de Configuração (Baseadas na dica do seu amigo)
-local targetHeight = 91 -- O "fixo em 91"
-local flashRemote = nil
-
--- Função para localizar o Remote de Flash automaticamente (Auto Grab/Trigger)
-local function findFlashRemote()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") and (v.Name:lower():find("flash") or v.Name:lower():find("teleport")) then
-            return v
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
-    end
-    return nil
+    end)
+
+    gui.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 end
+
+-- Localiza a MainFrame da Kavo e aplica o arraste
+local MainFrame = game.CoreGui:FindFirstChild("LK7 HUB - IMPÉRIO GG") or game.Players.LocalPlayer.PlayerGui:FindFirstChild("LK7 HUB - IMPÉRIO GG")
+if MainFrame then
+    MakeDraggable(MainFrame.Main)
+end
+
+-- Variáveis (Dica do amigo: Fixo em 91)
+local targetHeight = 91 
 
 -- ABA PRINCIPAL
 local Tab = Window:NewTab("Main")
 local Section = Tab:NewSection("Movimentação & Visual")
 
--- BOTÃO FLASH TP (Instruções da imagem image_867a65.png)
+-- BOTÃO FLASH TP (Usa coordenadas e fire remote)
 Section:NewButton("Flash TP (Coord 91)", "Teleporte instantâneo", function()
     local character = game.Players.LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
-        local remote = findFlashRemote()
         local targetPos = Vector3.new(character.HumanoidRootPart.Position.X, targetHeight, character.HumanoidRootPart.Position.Z)
         
+        -- Tenta disparar o remote de flash se existir
+        local remote = nil
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("RemoteEvent") and (v.Name:lower():find("flash") or v.Name:lower():find("teleport")) then
+                remote = v
+                break
+            end
+        end
+
         if remote then
-            remote:FireServer(targetPos) -- "Remote pra dar fire"
+            remote:FireServer(targetPos)
         else
             character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
         end
@@ -49,14 +74,9 @@ end)
 Section:NewToggle("Base Ray X", "Enxergar através das paredes", function(state)
     for _, obj in pairs(game.Workspace:GetDescendants()) do
         if obj:IsA("BasePart") and not obj.Parent:FindFirstChild("Humanoid") then
-            if state then
-                if obj.Transparency < 0.5 then obj.Transparency = 0.5 end
-            else
-                if obj.Transparency == 0.5 then obj.Transparency = 0 end
-            end
+            obj.Transparency = state and 0.5 or 0
         end
     end
 end)
 
--- NOTIFICAÇÃO DE INICIALIZAÇÃO
-Library:Notify("LK7 HUB", "Script carregado! Agora você pode arrastar o painel.", 5)
+Library:Notify("LK7 HUB", "Painel Móvel Ativado!", 5)
